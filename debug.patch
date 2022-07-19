@@ -1,0 +1,107 @@
+diff --git a/src/esmockLoader.mjs b/src/esmockLoader.mjs
+index 1e81373..fd078e9 100644
+--- a/src/esmockLoader.mjs
++++ b/src/esmockLoader.mjs
+@@ -31,57 +31,71 @@ const withHashRe = /[^#]*#/;
+ const isesmRe = /isesm=true/;
+ 
+ const resolve = async (specifier, context, defaultResolve) => {
++  const DEBUG = specifier.includes("esmock-workspace-test");
+   const { parentURL } = context;
+-  const [ esmockKeyParamSmall ] =
+-    (parentURL && parentURL.match(/\?esmk=\d*/)) || [];
+-  const esmockKeyLong = esmockKeyParamSmall
+-    ? global.esmockKeyGet(esmockKeyParamSmall.split('=')[1])
+-    : parentURL;
+-  const [ esmockKeyParam ] =
+-    (esmockKeyLong && esmockKeyLong.match(esmockKeyRe) || []);
+-
+-  if (!esmockKeyParam)
++
++  if (DEBUG) console.log("%%%%%%%%%", { specifier, parentURL });
++  const [ esmockKeyParamSmall ] = (parentURL && parentURL.match(/\?esmk=\d*/)) || [];
++
++  const esmockKeyLong = esmockKeyParamSmall ? global.esmockKeyGet(esmockKeyParamSmall.split('=')[1]) : parentURL;
++  const [ esmockKeyParam ] = (esmockKeyLong && esmockKeyLong.match(esmockKeyRe) || []);
++
++  if (DEBUG) console.log("%%%%%%%%%", { esmockKeyParamSmall, esmockKeyLong, parentURL, esmockKeyParam });
++
++  if (!esmockKeyParam) {
+     return defaultResolve(specifier, context, defaultResolve);
++  }
+ 
+   const resolved = await defaultResolve(specifier, context, defaultResolve);
+   const resolvedurl = decodeURI(resolved.url);
+-  const moduleKeyRe = new RegExp(
+-    '.*(' + resolvedurl + '\\?' + esmockKeyParam + '[^#]*).*');
+ 
++  if (DEBUG) console.log("%%%%%%%%%", { resolved });
++
++  const moduleKeyRe = new RegExp('.*(' + resolvedurl + '\\?' + esmockKeyParam + '[^#]*).*');
+   const [ keyUrl, keys ] = esmockKeyLong.split(esmockModuleKeysRe);
+   const moduleGlobals = keyUrl.replace(esmockGlobalsAndBeforeRe, '');
+-  const moduleKeyChild = moduleKeyRe.test(keys)
+-        && keys.replace(moduleKeyRe, '$1');
+-  const moduleKeyGlobal = moduleKeyRe.test(moduleGlobals)
+-        && moduleGlobals.replace(moduleKeyRe, '$1');
++  const moduleKeyChild = moduleKeyRe.test(keys) && keys.replace(moduleKeyRe, '$1');
++  const moduleKeyGlobal = moduleKeyRe.test(moduleGlobals) && moduleGlobals.replace(moduleKeyRe, '$1');
++
++  if (DEBUG) console.log("%%%%%%%%%", { moduleKeyRe, moduleGlobals, moduleKeyChild, moduleKeyGlobal });
+ 
+   const moduleKey = moduleKeyChild || moduleKeyGlobal;
+   if (moduleKey) {
+-    resolved.url = isesmRe.test(moduleKey)
+-      ? moduleKey
+-      : urlDummy + '#' + moduleKey;
++    resolved.url = isesmRe.test(moduleKey) ? moduleKey : urlDummy + '#' + moduleKey;
+   } else if (moduleGlobals && moduleGlobals !== 'null') {
+     if (!resolved.url.startsWith('node:')) {
+       resolved.url += '?esmockGlobals=' + moduleGlobals;
+     }
+   }
+ 
++  if (DEBUG) console.log("%%%%%%%%%", { ['resolved.url']: resolved.url });
++
+   return resolved;
+ };
+ 
+ const load = async (url, context, nextLoad) => {
+-  if (esmockModuleKeysRe.test(url)) // parent of mocked modules
++  const DEBUG = url.includes("esmock-workspace-test");
++
++  if (DEBUG) console.log("#########", { url, context });
++
++  if (esmockModuleKeysRe.test(url)) { // parent of mocked modules
+     return nextLoad(url, context, nextLoad);
++  }
+ 
+   url = url.replace(esmockGlobalsAndAfterRe, '');
+   if (url.startsWith(urlDummy)) {
+     url = url.replace(withHashRe, '');
+   }
+ 
++  if (DEBUG) console.log("#########", { url });
++
+   const exportedNames = exportNamesRe.test(url) &&
+     url.replace(exportNamesRe, '$1').split(',');
++
++  if (DEBUG) console.log("#########", { exportedNames });
++
+   if (exportedNames.length) {
+-    return {
++    const ret = {
+       format : 'module',
+       shortCircuit : true,
+       responseURL : encodeURI(url),
+@@ -90,6 +104,10 @@ const load = async (url, context, nextLoad) => {
+         : `export const ${name} = global.esmockCacheGet("${url}").${name}`
+       ).join('\n')
+     };
++
++    if (DEBUG) console.log("#########", { url, exportedNames });
++
++    return ret;
+   }
+ 
+   return nextLoad(url, context, nextLoad);
