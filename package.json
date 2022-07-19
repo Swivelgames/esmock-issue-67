@@ -1,0 +1,16 @@
+{
+  "name": "esmock-ws",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "setup:git": "git submodule init && git submodule update",
+    "setup:test": "npm exec --workspace=esmock -- $(which git) apply ../add-tests.patch",
+    "setup:npmi": "npm install",
+    "setup": "npm run setup:git && npm run setup:test && npm run setup:npmi",
+    "test": "npm run --workspace=esmock test"
+  },
+  "workspaces": ["*"],
+  "author": "",
+  "license": "ISC"
+}

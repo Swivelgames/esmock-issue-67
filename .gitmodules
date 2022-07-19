@@ -1,0 +1,4 @@
+[submodule "esmock"]
+	path = esmock
+	url = git@github.com:iambumblehead/esmock.git
+	branch = master

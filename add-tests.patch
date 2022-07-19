@@ -1,0 +1,72 @@
+diff --git a/spec/ava/esmock.ava.spec.js b/spec/ava/esmock.ava.spec.js
+index 20c4318..707de9f 100644
+--- a/spec/ava/esmock.ava.spec.js
++++ b/spec/ava/esmock.ava.spec.js
+@@ -223,6 +223,16 @@ test('should mock an exported constant values', async t => {
+   t.is(main.verifyImportedConstant(), 'hello world');
+ });
+ 
++test('should mock a node_module', async t => {
++  const usesNodeModule = await esmock('../local/usesNodeModule.js', {
++    'esmock-workspace-test' : {
++      namedExport: 'foobar'
++    }
++  });
++
++  t.is(usesNodeModule.fakeImport(), 'foobar');
++});
++
+ test('should mock core module', async t => {
+   const usesCoreModule = await esmock('../local/usesCoreModule.js', {
+     fs : {
+diff --git a/spec/local/usesNodeModule.js b/spec/local/usesNodeModule.js
+new file mode 100644
+index 0000000..2b41816
+--- /dev/null
++++ b/spec/local/usesNodeModule.js
+@@ -0,0 +1,3 @@
++import { namedExport } from 'esmock-workspace-test';
++
++export const fakeImport = () => namedExport;
+diff --git a/spec/node/esmock.node.test.js b/spec/node/esmock.node.test.js
+index c2598ef..442e10e 100644
+--- a/spec/node/esmock.node.test.js
++++ b/spec/node/esmock.node.test.js
+@@ -216,6 +216,16 @@ test('should mock an exported constant values', async () => {
+   assert.strictEqual(main.verifyImportedConstant(), 'hello world');
+ });
+ 
++test('should mock a node_module', async () => {
++  const usesNodeModule = await esmock('../local/usesNodeModule.js', {
++    'esmock-workspace-test' : {
++      namedExport: 'foobar'
++    }
++  });
++
++  assert.strictEqual(usesNodeModule.fakeImport(), 'foobar');
++});
++
+ test('should mock core module', async () => {
+   const usesCoreModule = await esmock('../local/usesCoreModule.js', {
+     fs : {
+diff --git a/spec/uvu/esmock.uvu.spec.js b/spec/uvu/esmock.uvu.spec.js
+index d48c34d..d179ce6 100644
+--- a/spec/uvu/esmock.uvu.spec.js
++++ b/spec/uvu/esmock.uvu.spec.js
+@@ -233,6 +233,16 @@ test('should mock an exported constant values', async () => {
+   assert.is(main.verifyImportedConstant(), 'hello world');
+ });
+ 
++test('should mock a node_module', async () => {
++  const usesNodeModule = await esmock('../local/usesNodeModule.js', {
++    'esmock-workspace-test' : {
++      namedExport: 'foobar'
++    }
++  });
++
++  assert.is(usesNodeModule.fakeImport(), 'foobar');
++});
++
+ test('should mock core module', async () => {
+   const usesCoreModule = await esmock('../local/usesCoreModule.js', {
+     fs : {
